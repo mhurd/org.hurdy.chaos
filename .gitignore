@@ -1,0 +1,15 @@
+/pom.xml
+*jar
+/lib
+/classes
+/native
+/.lein-failures
+/checkouts
+/.lein-deps-sum
+/.lein-plugins
+target
+*.iml
+.idea/*
+.idea/**/*
+.svn
+.svn/entries
