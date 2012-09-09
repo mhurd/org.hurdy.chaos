@@ -2,9 +2,6 @@
   (:use [org.hurdy.chaos.core])
   (:use [clojure.test]))
 
-(deftest test-bar
-  (is
-    (=
-      (bar)
-      1))
+(deftest testExampleGL []
+  (startExampleGL)
   )
