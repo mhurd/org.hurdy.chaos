@@ -1,9 +1,16 @@
-(ns org.hurdy.chaos.core)
+(ns org.hurdy.chaos.core
+  (:gen-class))
 
-(defn foo [n]
-  (print n))
+(import java.io.File)
 
-(defn bar []
-  1)
+(defn init []
+  (do
+    (println (. System getProperty "java.library.path"))
+    (println (. (File. ".") getAbsolutePath))
+    (import org.lwjgl.Sys)
+    )
+  )
+
+(defn -main[& args] (init))
 
 
