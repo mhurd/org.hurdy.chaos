@@ -1,8 +1,10 @@
 # org.hurdy.chaos
 
-A clojure project exploring chaos theory
+A Clojure project exploring chaos theory & fractals
 
 ## URL
+
+https://fleetingphotons.net
 
 ## License
 
