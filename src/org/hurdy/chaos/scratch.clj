@@ -1,9 +1,4 @@
-(ns org.hurdy.chaos.scratch)
-
-(defn calculate-triplets [product]
-  (set (for [x (range 1 product)
-        y (range 1 product)
-        z (range 1 product)
-     :when (= product (* x y z))]
-    (sort (list x y z))))
+(ns org.hurdy.chaos.scratch
+  (:use [org.hurdy.chaos.complex])
+  (:use [org.hurdy.chaos.mandelbrot])
   )
