@@ -27,7 +27,7 @@
 ;; complex number plane.
 (defn abs
   "Complex Absulute Value"
-  [[real imag]]
+  [c]
   (Math/sqrt
-   (+ (* real real)
-      (* imag imag))))
+   (+ (* (:r c) (:r c))
+      (* (:i c) (:i c)))))
