@@ -63,16 +63,6 @@
   )
 )
 
-(defn get-points [width height]
-  (let [half-width (int (/ width 2))
-        half-height (int (/ height 2))]
-    (for [x (range (- half-width) half-width)
-          y (range (- half-height) half-height)]
-            {:r (double (/ x half-width)) :i (double (/ y half-height))}
-    )
-  )
-)
-
 (def calc-model (ref nil))
 (def buffer (ref nil))
 
@@ -126,21 +116,26 @@
           b    (min (int (+ 40 ( / (* 5 (* gray gray)) 255))) 255)]
       (Color. r g b))))
 
-(defn doMandelbrot [agent width height points texture-id]
+(defn doMandelbrot [agent surface-width surface-height texture-id]
   (try
-    (doseq [point points]
-      (let [max-iterations 2000
-            result (calc-path (:r point) (:i point) max-iterations)
-            r (:r (:point result))
-            i (:i (:point result))
-            itr (:iterations result)
-            half-width (int (/ width 2))
-            half-height (int (/ height 2))
-            converted-x (int (+ (* r half-width) half-width))
-            converted-y (int (+ (* i half-height) half-height))]
+    (doseq [i (range 0 surface-width)
+          j (range 0 surface-height)]
+      (let  [max-iterations 100
+             ;x -2.1
+             ;y -1.4
+             ;width 3.0
+             ;height 3.1
+             x -2.2
+             y -1.6
+             width 3.0
+             height 3.1
+             p ( + x (* width (/ i surface-width)))
+             q ( + y (* height (/ j surface-height)))
+             result (calc-path p q max-iterations)
+             itr (:iterations result)]
         (if (:in-set result)
-            (.setRGB @calc-model converted-x converted-y (.getRGB (calc-pixel-color itr max-iterations)))
-            (.setRGB @calc-model converted-x converted-y (.getRGB (calc-pixel-color itr max-iterations)))
+            (.setRGB @calc-model i j (.getRGB (calc-pixel-color itr max-iterations)))
+            (.setRGB @calc-model i j (.getRGB (calc-pixel-color itr max-iterations)))
         )
       )
     )
@@ -172,9 +167,8 @@
 
 (defn startExampleGL []
   (do
-    (let [width 500
-          height 500
-          points (get-points width height)
+    (let [width 800
+          height 800
           calculator (agent [])]
       ;; Create the display
       (. Display setDisplayMode (DisplayMode. width height))
@@ -202,7 +196,7 @@
       (. GL11 glEnable GL11/GL_TEXTURE_2D)
       ;; start the agent calculator working
       (let [texture-id (load-texture @calc-model)]
-        (send calculator #(doMandelbrot % width height points texture-id))
+        (send calculator #(doMandelbrot % width height texture-id))
         (while (not (. Display isCloseRequested))
           (render-gl texture-id calculator width height)
           (. Display update)
