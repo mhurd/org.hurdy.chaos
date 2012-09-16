@@ -6,6 +6,7 @@
 (import org.lwjgl.opengl.DisplayMode)
 (import org.lwjgl.opengl.GL11)
 (import org.lwjgl.opengl.GL12)
+(import org.lwjgl.opengl.GLContext)
 (import org.lwjgl.input.Mouse)
 (import org.lwjgl.input.Keyboard)
 (import org.lwjgl.Sys)
@@ -70,21 +71,7 @@
   )
 
 (def calc-model (ref nil))
-
-(defn doMandelbrot [agent width height points]
-  (doseq [point points]
-    (let [result (calc-path (:r point) (:i point) 1000)]
-      (if (:in-set result)
-        (let [r (:r (:point result))
-              i (:i (:point result))]
-          (let [graphics (.createGraphics @calc-model)]
-            (.setRGB graphics (int (* width r)) (int (* height i)) 0 0 0 0)
-          )
-        )
-      )
-    )
-  )
-)
+(def buffer (ref nil))
 
 (defn load-texture [^BufferedImage buffered-image]
   (let [width (.getWidth buffered-image)
@@ -93,12 +80,14 @@
         bytes-per-pixel 4
         x-range (range 0 width 1)
         y-range (range 0 height 1)
-        buffer (. ByteBuffer allocateDirect (* width height bytes-per-pixel))
         texture-id (. GL11 glGenTextures)
         raster (.getRaster buffered-image)]
-    (.clear buffer)
-    (.put buffer (bytes (.getDataElements raster 0 0 width height nil)))
-    (.rewind buffer)
+    (dosync
+      (ref-set buffer (. ByteBuffer allocateDirect (* width height bytes-per-pixel)))
+      )
+    (.clear @buffer)
+    (.put @buffer (bytes (.getDataElements raster 0 0 width height nil)))
+    (.rewind @buffer)
     (. GL11 glBindTexture GL11/GL_TEXTURE_2D texture-id)
     ;; Setup wrap mode
     (. GL11 glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_S GL12/GL_CLAMP_TO_EDGE)
@@ -107,15 +96,43 @@
     (. GL11 glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR)
     (. GL11 glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_MAG_FILTER GL11/GL_LINEAR)
     ;; Send texel data to OpenGL
-    (. GL11 glTexImage2D GL11/GL_TEXTURE_2D 0 GL11/GL_RGBA8 width height 0 GL11/GL_RGBA GL11/GL_UNSIGNED_BYTE buffer)
+    (. GL11 glTexImage2D GL11/GL_TEXTURE_2D 0 GL11/GL_RGBA8 width height 0 GL11/GL_RGBA GL11/GL_UNSIGNED_BYTE @buffer)
     texture-id
   )
+)
+
+(defn update-buffer [^BufferedImage buffered-image texture-id]
+    (let [width (.getWidth buffered-image)
+          height (.getHeight buffered-image)
+          raster (.getRaster buffered-image)]
+        (.clear @buffer)
+        (.put @buffer (bytes (.getDataElements raster 0 0 width height nil)))
+        (.rewind @buffer)
+        ;; Send texel data to OpenGL
+        (. GL11 glTexImage2D GL11/GL_TEXTURE_2D 0 GL11/GL_RGBA8 width height 0 GL11/GL_RGBA GL11/GL_UNSIGNED_BYTE @buffer)
+      )
+  )
+
+(defn doMandelbrot [agent width height points texture-id]
+  (try
+    (doseq [point points]
+      (let [result (calc-path (:r point) (:i point) 1000)
+            r (:r (:point result))
+            i (:i (:point result))]
+        (if (:in-set result)
+            (.setRGB @calc-model (int (* width r)) (int (* height i)) (.getRGB (Color/black)))
+            (.setRGB @calc-model (int (* width r)) (int (* height i)) (.getRGB (Color/white)))
+        )
+      )
+    )
+  (catch Exception e ((.printStackTrace e))))
 )
 
 (defn render-gl [texture-id calculator width height]
     (update-fps)
     ;; still need to work out how to replace the texture/buffer in the render loop without killing
     ;; my machine :-)
+     (update-buffer @calc-model texture-id)
     (. GL11 glClear (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT))
     (. GL11 glEnable GL11/GL_BLEND)
     (. GL11 glBlendFunc GL11/GL_SRC_ALPHA GL11/GL_ONE_MINUS_SRC_ALPHA)
@@ -136,8 +153,8 @@
 
 (defn startExampleGL []
   (do
-    (let [width 1024
-          height 768
+    (let [width 500
+          height 500
           points (get-points width height)
           calculator (agent [])]
       ;; Create the display
@@ -165,8 +182,8 @@
       )
       (. GL11 glEnable GL11/GL_TEXTURE_2D)
       ;; start the agent calculator working
-      (send calculator #(doMandelbrot % width height points))
       (let [texture-id (load-texture @calc-model)]
+        (send calculator #(doMandelbrot % width height points texture-id))
         (while (not (. Display isCloseRequested))
           (render-gl texture-id calculator width height)
           (. Display update)

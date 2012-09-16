@@ -5,7 +5,7 @@
   [x y max-iterations]
   (let  [c (hash-map :r x :i y)]
     (loop [z c
-           iterations 1]
+           iterations 0]
       (if (>= iterations max-iterations)
         (if (> (abs z) 2.0)
           {:in-set false :point c :iterations iterations}
