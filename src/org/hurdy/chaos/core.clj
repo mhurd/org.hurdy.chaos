@@ -64,11 +64,14 @@
 )
 
 (defn get-points [width height]
-	(for [x (range 0 width)
-          y (range 0 height)]
-            {:r (double (/ x width)) :i (double (/ y height))}
-      )
+  (let [half-width (int (/ width 2))
+        half-height (int (/ height 2))]
+    (for [x (range (- half-width) half-width)
+          y (range (- half-height) half-height)]
+            {:r (double (/ x half-width)) :i (double (/ y half-height))}
+    )
   )
+)
 
 (def calc-model (ref nil))
 (def buffer (ref nil))
@@ -113,15 +116,31 @@
       )
   )
 
+(defn calc-pixel-color [iterations max-iterations]
+  (if (or (< iterations 10)
+          (= iterations max-iterations))
+    (Color. 0 0 0)
+    (let [gray (int (/ (* iterations 255) max-iterations))
+          r    gray
+          g    (min (int ( / (* 5 ( * gray gray)) 255)) 255)
+          b    (min (int (+ 40 ( / (* 5 (* gray gray)) 255))) 255)]
+      (Color. r g b))))
+
 (defn doMandelbrot [agent width height points texture-id]
   (try
     (doseq [point points]
-      (let [result (calc-path (:r point) (:i point) 1000)
+      (let [max-iterations 2000
+            result (calc-path (:r point) (:i point) max-iterations)
             r (:r (:point result))
-            i (:i (:point result))]
+            i (:i (:point result))
+            itr (:iterations result)
+            half-width (int (/ width 2))
+            half-height (int (/ height 2))
+            converted-x (int (+ (* r half-width) half-width))
+            converted-y (int (+ (* i half-height) half-height))]
         (if (:in-set result)
-            (.setRGB @calc-model (int (* width r)) (int (* height i)) (.getRGB (Color/black)))
-            (.setRGB @calc-model (int (* width r)) (int (* height i)) (.getRGB (Color/white)))
+            (.setRGB @calc-model converted-x converted-y (.getRGB (calc-pixel-color itr max-iterations)))
+            (.setRGB @calc-model converted-x converted-y (.getRGB (calc-pixel-color itr max-iterations)))
         )
       )
     )
