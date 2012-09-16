@@ -8,11 +8,11 @@
            iterations 0]
       (if (>= iterations max-iterations)
         (if (> (abs z) 2.0)
-          {:in-set false :point c :iterations iterations}
-          {:in-set true :point c :iterations iterations}
+          {:point c :iterations iterations}
+          {:point c :iterations iterations}
         )
         (if (> (abs z) 2.0)
-          {:in-set false :point c :iterations iterations}
+          {:point c :iterations iterations}
           (recur (add c (multiply z z)) (inc iterations))
         )
       )
