@@ -2,10 +2,6 @@
 
 A Clojure project exploring chaos theory & fractals
 
-## URL (my site, not related to this Chaos project...)
-
-http://fleetingphotons.net
-
 ## License
 
 Copyright (C) 2012
