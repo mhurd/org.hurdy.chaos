@@ -1,6 +1,6 @@
 # org.hurdy.chaos
 
-A Clojure project exploring chaos theory & fractals
+A Clojure project exploring chaos theory & fractals. Basics of  aMandelbrot viewer, not got very far!
 
 ## License
 
